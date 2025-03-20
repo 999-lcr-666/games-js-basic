@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+
+<body scroll="no">
+
+    <pre id="matrix-container"></pre>
+
+</body>
+
+
+
+
+
+<script>
+"use strict";
+function displayMatrixWithPre(matrix) {
+    let text = matrix.map(row => row.join(' ')).join('\n');
+    document.getElementById('matrix-container').innerText = text;
+}
+
+//var matrix = Array.from({ length: 10 }, () => Array(10).fill("X"));
+// console.log(matrix);
+
+
+var matrix1 = [];
+for (let i = 0; i < 10; i++) {
+    matrix1[i] = [];
+    for (let j = 0; j < 10; j++) {
+        matrix1[i][j] = "x"; // Initialize with empty strings or any default value
+    }
+}
+console.log(matrix1);
+
+/*
+for(let i=0;i<10;i++){
+    matrix[i] = [];
+    for(let j=0;j<10;i++){
+        matrix[i][j]="X";
+    }
+}*/
+
+
+
+
+const matrix2 = [
+    ['A', 'B', 'C'],
+    ['D', 'E', 'F'],
+    ['G', 'H', 'I']
+];
+
+displayMatrixWithPre(matrix1);
+</script>
+
+</body>

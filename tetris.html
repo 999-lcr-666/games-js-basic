@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Game</title>
+    <style>
+        #gameBoard {
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <pre id="gameBoard"></pre>
+
+    <script>
+        const rows = 20;
+        const cols = 10;
+        const borderChar = '|';
+        const horizontalBorderChar = '-';
+        let board = Array.from({ length: rows }, () => Array(cols).fill(' '));
+        let currentPiece = { x: 0, y: Math.floor(cols / 2) - 1, shape: [[1, 1], [1, 1]] }; // Block: 2x2 square
+        let gameOver = false;
+
+        // Initialize the game
+        function initGame() {
+            document.addEventListener('keydown', movePiece);
+            setInterval(gameLoop, 500); // Drop the piece every 500ms
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (gameOver) return;
+            movePieceDown();
+            render();
+        }
+
+        // Move the piece down
+        function movePieceDown() {
+            if (!canMove(currentPiece.x + 1, currentPiece.y, currentPiece.shape)) {
+                placePiece();
+                currentPiece = generatePiece();
+            } else {
+                currentPiece.x += 1; // Move the piece down
+            }
+        }
+
+        // Move the piece left or right
+        function movePiece(event) {
+            if (gameOver) return;
+
+            if (event.key === 'ArrowLeft' && canMove(currentPiece.x, currentPiece.y - 1, currentPiece.shape)) {
+                currentPiece.y -= 1;
+            } else if (event.key === 'ArrowRight' && canMove(currentPiece.x, currentPiece.y + 1, currentPiece.shape)) {
+                currentPiece.y += 1;
+            } else if (event.key === 'ArrowDown') {
+                movePieceDown();
+            } else if (event.key === 'ArrowUp') {
+                rotatePiece();
+            }
+        }
+
+        // Check if the piece can move to a new position
+        function canMove(newX, newY, shape) {
+            for (let i = 0; i < shape.length; i++) {
+                for (let j = 0; j < shape[i].length; j++) {
+                    if (shape[i][j] === 1) {
+                        const x = newX + i;
+                        const y = newY + j;
+                        if (x < 0 || x >= rows || y < 0 || y >= cols || board[x][y] !== ' ') {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Place the current piece on the board
+        function placePiece() {
+            for (let i = 0; i < currentPiece.shape.length; i++) {
+                for (let j = 0; j < currentPiece.shape[i].length; j++) {
+                    if (currentPiece.shape[i][j] === 1) {
+                        board[currentPiece.x + i][currentPiece.y + j] = '#';
+                    }
+                }
+            }
+
+            // Check for full lines and remove them
+            for (let i = 0; i < rows; i++) {
+                if (board[i].every(cell => cell === '#')) {
+                    board.splice(i, 1);
+                    board.unshift(Array(cols).fill(' '));
+                }
+            }
+
+            // Check if the piece has collided at the top (game over)
+            if (currentPiece.x <= 0) {
+                gameOver = true;
+            }
+        }
+
+        // Generate a new random piece
+        function generatePiece() {
+            const pieces = [
+                { x: 0, y: Math.floor(cols / 2) - 1, shape: [[1, 1], [1, 1]] }, // Square
+                { x: 0, y: Math.floor(cols / 2) - 1, shape: [[1, 0, 0], [1, 1, 1]] }, // L shape
+                { x: 0, y: Math.floor(cols / 2) - 1, shape: [[0, 0, 1], [1, 1, 1]] }, // Reverse L shape
+            ];
+            return pieces[Math.floor(Math.random() * pieces.length)];
+        }
+
+        // Rotate the current piece
+        function rotatePiece() {
+            const newShape = currentPiece.shape[0].map((_, index) =>
+                currentPiece.shape.map(row => row[index])
+            ).reverse();
+
+            if (canMove(currentPiece.x, currentPiece.y, newShape)) {
+                currentPiece.shape = newShape;
+            }
+        }
+
+        // Render the game board with borders
+        function render() {
+            let boardText = '';
+            
+            // Add the top border
+            boardText += horizontalBorderChar.repeat(cols + 2) + '\n';
+            
+            for (let i = 0; i < rows; i++) {
+                boardText += borderChar;  // Left border
+                for (let j = 0; j < cols; j++) {
+                    if (isPieceAtPosition(i, j)) {
+                        boardText += '#';  // Piece part
+                    } else {
+                        boardText += board[i][j];  // Empty space
+                    }
+                }
+                boardText += borderChar + '\n';  // Right border
+            }
+
+            // Add the bottom border
+            boardText += horizontalBorderChar.repeat(cols + 2) + '\n';
+
+            if (gameOver) {
+                boardText += 'Game Over\n';
+            }
+
+            document.getElementById('gameBoard').textContent = boardText;
+        }
+
+        // Check if a piece is at a specific position
+        function isPieceAtPosition(row, col) {
+            for (let i = 0; i < currentPiece.shape.length; i++) {
+                for (let j = 0; j < currentPiece.shape[i].length; j++) {
+                    if (currentPiece.shape[i][j] === 1 && row === currentPiece.x + i && col === currentPiece.y + j) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>

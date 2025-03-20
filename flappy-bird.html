@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird-like Game</title>
+    <style>
+        #gameBoard {
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <pre id="gameBoard"></pre>
+
+    <script>
+        const rows = 15;
+        const cols = 30;
+        let birdX = Math.floor(rows / 2);
+        let birdY = Math.floor(cols / 4);
+        let birdVelocity = 0;
+        let score = 0;
+        let gameOver = false;
+        const gravity = 1;
+        const jumpHeight = -3;
+
+        // Create the game board
+        const gameMap = Array.from({ length: rows }, () => Array(cols).fill(' '));
+
+        // Pipes array to track pipe positions
+        let pipes = [];
+
+        // Bird symbol
+        const birdSymbol = 'O';
+
+        // Render the game map
+        function render() {
+            let boardText = '';
+
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    if (i === birdX && j === birdY) {
+                        boardText += birdSymbol; // Display the bird
+                    } else if (isPipe(i, j)) {
+                        boardText += '|'; // Display pipes
+                    } else if (i === rows - 1) {
+                        boardText += '-'; // Display ground
+                    } else {
+                        boardText += ' ';
+                    }
+                }
+                boardText += '\n';
+            }
+
+            boardText += `Score: ${score}\n`;
+
+            if (gameOver) {
+                boardText += 'Game Over\n';
+            }
+
+            document.getElementById('gameBoard').textContent = boardText;
+        }
+
+        // Add new pipes to the game
+        function addPipes() {
+            const gapHeight = Math.floor(Math.random() * 5) + 3; // Random gap size
+            const pipeTop = Math.floor(Math.random() * (rows - gapHeight - 1)); // Random position for the top pipe
+            pipes.push({ x: cols - 1, top: pipeTop, gapHeight: gapHeight });
+        }
+
+        // Move pipes to the left
+        function movePipes() {
+            pipes = pipes.filter(pipe => pipe.x > 0);
+            pipes.forEach(pipe => pipe.x--);
+        }
+
+        // Check if the position (i, j) is part of any pipe
+        function isPipe(i, j) {
+            for (let pipe of pipes) {
+                if (j === pipe.x) {
+                    if (i < pipe.top || i >= pipe.top + pipe.gapHeight) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Update the bird's position (gravity + jump)
+        function updateBird() {
+            if (gameOver) return;
+
+            birdX += birdVelocity;
+
+            // Apply gravity
+            birdVelocity += gravity;
+
+            // Check if bird hits the ground or a pipe
+            if (birdX >= rows - 1 || isPipe(birdX, birdY)) {
+                gameOver = true;
+            }
+
+            render();
+        }
+
+        // Handle user input (space to jump)
+        function jump() {
+            if (gameOver) return;
+            birdVelocity = jumpHeight;
+        }
+
+        // Increase score when pipes move out of the screen
+        function increaseScore() {
+            pipes.forEach(pipe => {
+                if (pipe.x === birdY - 1) {
+                    score++;
+                }
+            });
+        }
+
+        // Game loop to update the game state
+        function gameLoop() {
+            if (gameOver) return;
+
+            // Add pipes at regular intervals
+            if (Math.random() < 0.02) {
+                addPipes();
+            }
+
+            // Move pipes and check for collision
+            movePipes();
+
+            // Update the bird's position
+            updateBird();
+
+            // Increase score
+            increaseScore();
+
+            render();
+        }
+
+        // Start the game
+        function startGame() {
+            document.addEventListener('keydown', function(event) {
+                if (event.key === ' ') {
+                    jump();
+                }
+            });
+
+            setInterval(gameLoop, 100); // Run game loop every 100ms
+        }
+
+        startGame();
+    </script>
+</body>
+</html>

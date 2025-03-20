@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-based FPS</title>
+    <style>
+        #gameBoard {
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <pre id="gameBoard"></pre>
+
+    <script>
+        const rows = 20; // Height of the view (number of lines we display)
+        const cols = 40; // Width of the view (number of characters per row)
+        let playerX = 5;
+        let playerY = 5;
+        let playerAngle = 0; // Angle of the player's view (in radians)
+
+        const gameMap = [
+            ['#', '#', '#', '#', '#', '#', '#', '#', '#', '#'],
+            ['#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#'],
+            ['#', ' ', '#', '#', '#', '#', '#', '#', ' ', '#'],
+            ['#', ' ', '#', ' ', ' ', ' ', '#', ' ', '#'],
+            ['#', '#', '#', '#', '#', '#', '#', '#', '#', '#'],
+        ];
+
+        // Raycasting parameters
+        const viewDistance = 10;
+        const fov = Math.PI / 3; // Field of view (in radians)
+
+        // Function to render the game world
+        function render() {
+            let boardText = '';
+
+            // Raycasting to simulate the FPS view
+            for (let row = 0; row < rows; row++) {
+                let rowText = '';
+                const rayAngle = playerAngle - fov / 2 + fov * (row / rows);
+
+                for (let col = 0; col < cols; col++) {
+                    const ray = castRay(playerX, playerY, rayAngle);
+                    rowText += ray ? '#' : ' '; // Show wall if ray hits, else empty space
+                }
+                boardText += rowText + '\n';
+            }
+
+            // Display the player's position
+            boardText += `Player Position: (${playerX}, ${playerY})\n`;
+
+            document.getElementById('gameBoard').textContent = boardText;
+        }
+
+        // Cast a ray and check for wall collisions
+        function castRay(x, y, angle) {
+            let distance = 0;
+            let hitWall = false;
+
+            while (distance < viewDistance) {
+                distance += 0.1; // Increment the ray distance
+
+                const checkX = Math.floor(x + distance * Math.cos(angle));
+                const checkY = Math.floor(y + distance * Math.sin(angle));
+
+                // Check if the ray hits a wall (based on the game map)
+                if (gameMap[checkY] && gameMap[checkY][checkX] === '#') {
+                    hitWall = true;
+                    break;
+                }
+            }
+            return hitWall;
+        }
+
+        // Handle player movement and rotation
+        function movePlayer(event) {
+            const moveSpeed = 0.5;
+            const turnSpeed = Math.PI / 24; // Rotate by 7.5 degrees
+
+            if (event.key === 'ArrowUp') {
+                playerX += Math.cos(playerAngle) * moveSpeed;
+                playerY += Math.sin(playerAngle) * moveSpeed;
+            } else if (event.key === 'ArrowDown') {
+                playerX -= Math.cos(playerAngle) * moveSpeed;
+                playerY -= Math.sin(playerAngle) * moveSpeed;
+            } else if (event.key === 'ArrowLeft') {
+                playerAngle -= turnSpeed;
+            } else if (event.key === 'ArrowRight') {
+                playerAngle += turnSpeed;
+            }
+
+            render();
+        }
+
+        // Start the game
+        function startGame() {
+            document.addEventListener('keydown', movePlayer);
+            render();
+        }
+
+        startGame();
+    </script>
+</body>
+</html>

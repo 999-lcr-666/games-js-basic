@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOOM-like Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        document.body.appendChild(canvas);
+        canvas.width = 800;
+        canvas.height = 400;
+
+        // Simple 2D map (1 = wall, 0 = empty space)
+        const map = [
+            [1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 1, 0, 1],
+            [1, 0, 1, 0, 0, 1, 0, 1],
+            [1, 0, 1, 0, 0, 1, 0, 1],
+            [1, 0, 1, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1],
+        ];
+
+        const tileSize = 64;
+        let player = { x: 160, y: 160, angle: 0 };
+        const fov = Math.PI / 4;
+        const numRays = 120;
+
+        function castRays() {
+            for (let i = 0; i < numRays; i++) {
+                let rayAngle = player.angle - fov / 2 + (i / numRays) * fov;
+                let distanceToWall = 0;
+                let hitWall = false;
+                let stepSize = 5;
+
+                while (!hitWall && distanceToWall < 500) {
+                    distanceToWall += stepSize;
+                    let testX = Math.floor((player.x + Math.cos(rayAngle) * distanceToWall) / tileSize);
+                    let testY = Math.floor((player.y + Math.sin(rayAngle) * distanceToWall) / tileSize);
+                    if (map[testY]?.[testX] === 1) hitWall = true;
+                }
+
+                let lineHeight = (tileSize * 5) / distanceToWall * 50;
+                let color = `rgb(${255 - distanceToWall / 2}, 0, 0)`;
+                ctx.fillStyle = color;
+                ctx.fillRect(i * (canvas.width / numRays), (canvas.height - lineHeight) / 2, canvas.width / numRays, lineHeight);
+            }
+        }
+
+        function update() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            castRays();
+            requestAnimationFrame(update);
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft") player.angle -= 0.1;
+            if (e.key === "ArrowRight") player.angle += 0.1;
+            if (e.key === "ArrowUp") {
+                player.x += Math.cos(player.angle) * 5;
+                player.y += Math.sin(player.angle) * 5;
+            }
+            if (e.key === "ArrowDown") {
+                player.x -= Math.cos(player.angle) * 5;
+                player.y -= Math.sin(player.angle) * 5;
+            }
+        });
+
+        update();
+    </script>
+</body>
+</html>

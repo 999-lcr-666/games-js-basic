@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blitz-like Game</title>
+    <style>
+        #gameBoard {
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <pre id="gameBoard"></pre>
+
+    <script>
+        const rows = 10;
+        const cols = 20;
+        let playerX = 0;  // Start the plane at the top row
+        let playerY = Math.floor(cols / 2);  // Center the plane horizontally
+        let score = 0;
+        let gameOver = false;
+
+        // Define the game world
+        const gameMap = Array.from({ length: rows }, () => Array(cols).fill(' '));
+
+        // Add some walls (buildings) at the bottom row
+        for (let i = 0; i < cols; i++) {
+            if (Math.random() > 0.5) {
+                gameMap[rows - 1][i] = '#'; // Randomly place buildings at the bottom
+            }
+        }
+        
+        // Plane's symbol
+        const planeSymbol = 'P';
+        let direction = { x: 0, y: 0 };
+
+        // Function to render the game map
+        function render() {
+            let boardText = '';
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    if (i === playerX && j === playerY) {
+                        boardText += planeSymbol; // Display the player
+                    } else {
+                        boardText += gameMap[i][j]; // Display walls or empty spaces
+                    }
+                }
+                boardText += '\n';
+            }
+
+            boardText += `Score: ${score}\n`;
+
+            if (gameOver) {
+                boardText += 'Game Over\n';
+            }
+
+            document.getElementById('gameBoard').textContent = boardText;
+        }
+
+        // Handle movement based on user input (only move left/right)
+        function changeDirection(event) {
+            if (gameOver) return;
+
+            if (event.key === 'ArrowLeft') {
+                direction = { x: 0, y: -1 }; // Move left
+            } else if (event.key === 'ArrowRight') {
+                direction = { x: 0, y: 1 }; // Move right
+            } else if (event.key === ' ') {
+                shoot(); // Shoot when space is pressed
+            }
+        }
+
+        // Move plane (top-down + left-right-left)
+        function movePlane() {
+            if (gameOver) return;
+
+            // Move the plane left or right based on direction
+            if (direction.y !== 0) {
+                let newY = playerY + direction.y;
+
+                // Make sure the plane stays within bounds horizontally
+                if (newY >= 0 && newY < cols) {
+                    playerY = newY;
+                }
+            }
+
+            // Move the plane down when it touches the border
+            if (playerY === 0 || playerY === cols - 1) {
+                playerX = Math.min(playerX + 1, rows - 1); // Move down if at border
+                direction.y = direction.y === 1 ? -1 : 1; // Reverse direction
+            }
+
+            render();
+        }
+
+        // Function to simulate shooting upwards
+        function shoot() {
+            let shootX = playerX;
+            let shootY = playerY;
+
+            const shootInterval = setInterval(() => {
+                shootX++;  // Bullets move downward
+
+                if (shootX >= rows || gameMap[shootX][shootY] === '#') {
+                    clearInterval(shootInterval);
+                } else {
+                    gameMap[shootX][shootY] = '*'; // Mark where the shot hit
+                    score++;
+                }
+
+                // Remove the bullet when it reaches the ground
+                if (shootX >= rows - 1) {
+                    clearInterval(shootInterval);
+                    gameMap[shootX][shootY] = ' '; // Clear the bullet from the ground
+                }
+
+                render();
+            }, 100); // Shoot every 100ms
+        }
+
+        // Start the game
+        function startGame() {
+            document.addEventListener('keydown', changeDirection);
+
+            setInterval(() => {
+                if (!gameOver) {
+                    movePlane();
+                }
+            }, 200); // Move plane every 200ms
+
+            render();
+        }
+
+        startGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Man Game</title>
+    <style>
+        #gameBoard {
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <pre id="gameBoard"></pre>
+
+    <script>
+        const rows = 10;
+        const cols = 20;
+        let playerX = 1;
+        let playerY = 1;
+        let score = 0;
+        let gameOver = false;
+
+        const gameMap = [
+            ['#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#'],
+            ['#', ' ', 'o', ' ', 'o', ' ', ' ', 'o', ' ', ' ', ' ', ' ', 'o', ' ', ' ', 'o', ' ', 'o', '#'],
+            ['#', 'o', ' ', '#', '#', ' ', '#', ' ', ' ', '#', 'o', '#', ' ', '#', 'o', '#', ' ', ' ', '#'],
+            ['#', ' ', 'o', 'o', ' ', ' ', '#', ' ', ' ', '#', 'o', ' ', ' ', ' ', ' ', ' ', 'o', 'o', '#'],
+            ['#', '#', '#', '#', '#', ' ', '#', '#', '#', ' ', '#', '#', ' ', '#', '#', '#', '#', '#', '#', '#'],
+            ['#', 'o', ' ', ' ', 'o', 'o', '#', 'o', ' ', '#', 'o', ' ', 'o', 'o', ' ', 'o', 'o', ' ', '#'],
+            ['#', ' ', ' ', 'o', ' ', '#', '#', '#', ' ', '#', ' ', ' ', ' ', 'o', ' ', ' ', ' ', ' ', '#'],
+            ['#', 'o', '#', ' ', 'o', '#', '#', '#', '#', '#', ' ', 'o', ' ', 'o', ' ', 'o', 'o', ' ', '#'],
+            ['#', ' ', '#', '#', '#', '#', ' ', ' ', ' ', ' ', 'o', '#', '#', ' ', ' ', 'o', ' ', ' ', '#'],
+            ['#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#']
+        ];
+
+        // Ghost positions and movement speed
+        let ghosts = [
+            { x: 3, y: 3, symbol: 'G' },
+            { x: 7, y: 7, symbol: 'G' }
+        ];
+
+        let direction = { x: 0, y: 1 }; // Pac-Man's current direction (moving right initially)
+
+        // Function to render the game map
+        function render() {
+            let boardText = '';
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    if (i === playerX && j === playerY) {
+                        boardText += 'P'; // Player position
+                    } else {
+                        let ghostFound = false;
+                        for (const ghost of ghosts) {
+                            if (ghost.x === i && ghost.y === j) {
+                                boardText += ghost.symbol; // Ghost position
+                                ghostFound = true;
+                                break;
+                            }
+                        }
+                        if (!ghostFound) {
+                            boardText += gameMap[i][j]; // Wall, food, or space
+                        }
+                    }
+                }
+                boardText += '\n';
+            }
+
+            boardText += `Score: ${score}\n`;
+
+            if (gameOver) {
+                boardText += 'Game Over\n';
+            }
+
+            // Display the board without 'undefined'
+            document.getElementById('gameBoard').textContent = boardText;
+        }
+
+        // Move ghosts randomly
+        function moveGhosts() {
+            if (gameOver) return;
+            for (const ghost of ghosts) {
+                const direction = Math.floor(Math.random() * 4); // 0: up, 1: down, 2: left, 3: right
+                let newX = ghost.x;
+                let newY = ghost.y;
+
+                if (direction === 0) newX -= 1;
+                if (direction === 1) newX += 1;
+                if (direction === 2) newY -= 1;
+                if (direction === 3) newY += 1;
+
+                if (gameMap[newX] && gameMap[newX][newY] !== '#') {
+                    ghost.x = newX;
+                    ghost.y = newY;
+                }
+            }
+        }
+
+        // Handle player movement
+        function movePlayer() {
+            if (gameOver) return;
+
+            let newX = playerX + direction.x;
+            let newY = playerY + direction.y;
+
+            // Check if the new position is not a wall
+            if (gameMap[newX] && gameMap[newX][newY] !== '#') {
+                playerX = newX;
+                playerY = newY;
+
+                // Check if the new position contains a pellet
+                if (gameMap[playerX][playerY] === 'o') {
+                    score += 10;
+                    gameMap[playerX][playerY] = ' '; // Remove the pellet
+                }
+
+                // Check if the player collides with a ghost
+                for (const ghost of ghosts) {
+                    if (ghost.x === playerX && ghost.y === playerY) {
+                        gameOver = true;
+                    }
+                }
+            } else {
+                // If Pac-Man hits a wall, do not change the direction to move further into the wall
+                if (direction.x === 1 && (playerX > 0 && gameMap[playerX - 1][playerY] !== '#')) {
+                    direction = { x: -1, y: 0 }; // Change direction to up
+                } else if (direction.x === -1 && (playerX < rows - 1 && gameMap[playerX + 1][playerY] !== '#')) {
+                    direction = { x: 1, y: 0 }; // Change direction to down
+                } else if (direction.y === 1 && (playerY > 0 && gameMap[playerX][playerY - 1] !== '#')) {
+                    direction = { x: 0, y: -1 }; // Change direction to left
+                } else if (direction.y === -1 && (playerY < cols - 1 && gameMap[playerX][playerY + 1] !== '#')) {
+                    direction = { x: 0, y: 1 }; // Change direction to right
+                }
+            }
+
+            render();
+        }
+
+        // Handle player input to change direction
+        function changeDirection(event) {
+            if (gameOver) return;
+
+            if (event.key === 'ArrowUp' && direction.x !== 1) {
+                direction = { x: -1, y: 0 }; // Up
+            } else if (event.key === 'ArrowDown' && direction.x !== -1) {
+                direction = { x: 1, y: 0 }; // Down
+            } else if (event.key === 'ArrowLeft' && direction.y !== 1) {
+                direction = { x: 0, y: -1 }; // Left
+            } else if (event.key === 'ArrowRight' && direction.y !== -1) {
+                direction = { x: 0, y: 1 }; // Right
+            }
+        }
+
+        // Start the game
+        function startGame() {
+            document.addEventListener('keydown', changeDirection);
+            setInterval(() => {
+                moveGhosts();
+                movePlayer();
+            }, 500); // Move player and ghosts every 500ms
+            render();
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
